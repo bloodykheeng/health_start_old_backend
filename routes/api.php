@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\HospitalController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserPermissionsController;
 use App\Http\Controllers\API\UserRolesController;
@@ -45,5 +46,8 @@ Route::group(
 
         Route::Resource('users-permissions', UserPermissionsController::class);
         Route::get('users-permissions-permissionNotInCurrentRole/{id}', [UserPermissionsController::class, 'permissionNotInCurrentRole']);
+
+        //================================== Hospitals ===============================
+        Route::apiResource('hospitals', HospitalController::class);
     }
 );

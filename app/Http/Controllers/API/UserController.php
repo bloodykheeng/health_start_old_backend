@@ -11,68 +11,69 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
-{public function index(Request $request)
+{
+    public function index(Request $request)
     {
-    // Uncomment and use this if you need authorization check
-    // if (!Auth::user()->can('view users')) {
-    //     return response()->json(['message' => 'Unauthorized'], 403);
-    // }
+        // Uncomment and use this if you need authorization check
+        // if (!Auth::user()->can('view users')) {
+        //     return response()->json(['message' => 'Unauthorized'], 403);
+        // }
 
-    $query = User::query();
+        $query = User::query();
 
-    // Check if vendor_id is provided and not null
-    if ($request->has('vendor_id') && $request->vendor_id !== null) {
-        // Filter users by the provided vendor_id
-        $query->whereHas('vendors', function ($query) use ($request) {
-            $query->where('vendor_id', $request->vendor_id);
+        // Check if vendor_id is provided and not null
+        if ($request->has('vendor_id') && $request->vendor_id !== null) {
+            // Filter users by the provided vendor_id
+            $query->whereHas('vendors', function ($query) use ($request) {
+                $query->where('vendor_id', $request->vendor_id);
+            });
+        }
+
+        // Filter by role if provided
+        if ($request->has('role') && $request->role !== null) {
+            $query->role($request->role); // This uses the role scope provided by Spatie's permission package
+        }
+
+        // Apply search filter (if provided)
+        $search = $request->query('search');
+        if ($search) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply orderBy and orderDirection if both are provided
+        $orderBy = $request->query('orderBy');
+        $orderDirection = $request->query('orderDirection', 'asc');
+
+        // if (isset($orderBy) && isset($orderDirection)) {
+        //     // Validate orderDirection
+        //     if (in_array($orderDirection, ['asc', 'desc'])) {
+        //         // Check if the column exists in the users table
+        //         if (Schema::hasColumn('users', $orderBy)) {
+        //             $query->orderBy($orderBy, $orderDirection);
+        //         }
+        //     }
+        // }
+
+        $query->latest();
+        // Pagination
+        $perPage = $request->query('per_page', 10); // Default to 10 per page
+        $page = $request->query('page', 1); // Default to first page
+
+        $paginatedUsers = $query->paginate($perPage);
+
+        // Adding role names and permissions to each user in the data collection
+        $paginatedUsers->getCollection()->transform(function ($user) {
+            $user->role = $user->getRoleNames()->first() ?? "";
+            $user->permissions = $user->getAllPermissions()->pluck('name') ?? null;
+            return $user;
         });
+
+        // Return the paginated response
+        return response()->json($paginatedUsers);
     }
-
-    // Filter by role if provided
-    if ($request->has('role') && $request->role !== null) {
-        $query->role($request->role); // This uses the role scope provided by Spatie's permission package
-    }
-
-    // Apply search filter (if provided)
-    $search = $request->query('search');
-    if ($search) {
-        $query->where(function ($subQuery) use ($search) {
-            $subQuery->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
-        });
-    }
-
-    // Apply orderBy and orderDirection if both are provided
-    $orderBy = $request->query('orderBy');
-    $orderDirection = $request->query('orderDirection', 'asc');
-
-    // if (isset($orderBy) && isset($orderDirection)) {
-    //     // Validate orderDirection
-    //     if (in_array($orderDirection, ['asc', 'desc'])) {
-    //         // Check if the column exists in the users table
-    //         if (Schema::hasColumn('users', $orderBy)) {
-    //             $query->orderBy($orderBy, $orderDirection);
-    //         }
-    //     }
-    // }
-
-    $query->latest(); 
-    // Pagination
-    $perPage = $request->query('per_page', 10); // Default to 10 per page
-    $page = $request->query('page', 1); // Default to first page
-
-    $paginatedUsers = $query->paginate($perPage);
-
-    // Adding role names and permissions to each user in the data collection
-    $paginatedUsers->getCollection()->transform(function ($user) {
-        $user->role = $user->getRoleNames()->first() ?? "";
-        $user->permissions = $user->getAllPermissions()->pluck('name') ?? null;
-        return $user;
-    });
-
-    // Return the paginated response
-    return response()->json($paginatedUsers);
-}
 
     public function show($id)
     {
@@ -264,4 +265,5 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully']);
-    }}
+    }
+}
