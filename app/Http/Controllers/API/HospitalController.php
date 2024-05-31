@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Models\Hospital;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\File;
 
 class HospitalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Hospital::query();
+        $query = Hospital::with(['createdBy', 'updatedBy']);
 
         // Apply search filter (if provided)
         $search = $request->query('search');
@@ -27,18 +28,20 @@ class HospitalController extends Controller
         }
 
         // Apply orderBy and orderDirection if both are provided
-        $orderBy = $request->query('orderBy');
-        $orderDirection = $request->query('orderDirection', 'asc');
+        // $orderBy = $request->query('orderBy');
+        // $orderDirection = $request->query('orderDirection', 'asc');
 
-        if ($orderBy && $orderDirection) {
-            // Validate orderDirection
-            if (in_array($orderDirection, ['asc', 'desc'])) {
-                // Check if the column exists in the hospitals table
-                if (Schema::hasColumn('hospitals', $orderBy)) {
-                    $query->orderBy($orderBy, $orderDirection);
-                }
-            }
-        }
+        // if ($orderBy && $orderDirection) {
+        //     // Validate orderDirection
+        //     if (in_array($orderDirection, ['asc', 'desc'])) {
+        //         // Check if the column exists in the hospitals table
+        //         if (Schema::hasColumn('hospitals', $orderBy)) {
+        //             $query->orderBy($orderBy, $orderDirection);
+        //         }
+        //     }
+        // }
+
+        $query->latest();
 
         // Pagination
         $perPage = $request->query('per_page', 10); // Default to 10 per page
@@ -73,12 +76,22 @@ class HospitalController extends Controller
             'email' => 'required|string|email|max:255|unique:hospitals',
             'website' => 'nullable|url|max:255',
             'capacity' => 'required|integer|min:1',
-            'is_active' => 'required|boolean',
+            'status' => 'required|string|max:255',
         ]);
+
+        $validated['created_by'] = Auth::id();
+        $validated['updated_by'] = Auth::id();
 
         DB::beginTransaction();
 
         try {
+
+            $photoUrl = null;
+            if ($request->hasFile('photo')) {
+                $photoUrl = $this->uploadPhoto($request->file('photo'), 'hospital_photos'); // Save the photo in a specific folder
+                $validated['photo_url'] = $photoUrl;
+            }
+
             $hospital = Hospital::create($validatedData);
 
             DB::commit();
@@ -102,7 +115,7 @@ class HospitalController extends Controller
             'email' => 'required|string|email|max:255|unique:hospitals,email,' . $id,
             'website' => 'nullable|url|max:255',
             'capacity' => 'required|integer|min:1',
-            'is_active' => 'required|boolean',
+            'status' => 'required|string|max:255',
         ]);
 
         $hospital = Hospital::find($id);
@@ -113,6 +126,18 @@ class HospitalController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $validated['updated_by'] = Auth::id();
+
+            $photoUrl = $hospital->photo_url;
+            if ($request->hasFile('photo')) {
+                // Delete old photo if it exists
+                if ($photoUrl) {
+                    $this->deletePhoto($photoUrl);
+                }
+                $photoUrl = $this->uploadPhoto($request->file('photo'), 'spare_part_photos');
+                $validated['photo_url'] = $photoUrl;
+            }
             $hospital->update($validatedData);
 
             DB::commit();
@@ -133,5 +158,27 @@ class HospitalController extends Controller
         $hospital->delete();
 
         return response()->json(['message' => 'Hospital deleted successfully']);
+    }
+
+    private function uploadPhoto($photo, $folderPath)
+    {
+        $publicPath = public_path($folderPath);
+        if (!File::exists($publicPath)) {
+            File::makeDirectory($publicPath, 0777, true, true);
+        }
+
+        $fileName = time() . '_' . $photo->getClientOriginalName();
+        $photo->move($publicPath, $fileName);
+
+        return '/' . $folderPath . '/' . $fileName;
+    }
+
+    private function deletePhoto($photoUrl)
+    {
+        $photoPath = parse_url($photoUrl, PHP_URL_PATH);
+        $photoPath = public_path($photoPath);
+        if (File::exists($photoPath)) {
+            File::delete($photoPath);
+        }
     }
 }
