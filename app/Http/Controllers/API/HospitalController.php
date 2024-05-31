@@ -54,7 +54,7 @@ class HospitalController extends Controller
 
     public function show($id)
     {
-        $hospital = Hospital::findOrFail($id);
+        $hospital = Hospital::with(['createdBy', 'updatedBy'])->find($id);
 
         if (!$hospital) {
             return response()->json(['message' => 'Hospital not found'], 404);
