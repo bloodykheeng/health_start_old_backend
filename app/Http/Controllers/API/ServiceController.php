@@ -34,12 +34,16 @@ class ServiceController extends Controller
         // }
 
         // Pagination
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        // $perPage = $request->query('per_page', 10);
+        // $page = $request->query('page', 1);
 
-        $paginatedServices = $query->paginate($perPage);
+        // $paginatedServices = $query->paginate($perPage);
 
-        return response()->json($paginatedServices);
+        // return response()->json($paginatedServices);
+
+        $data = $query->get();
+
+        return response()->json(["data" => $data]);
     }
 
     public function show($id)

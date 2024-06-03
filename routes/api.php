@@ -39,7 +39,8 @@ Route::group(
         Route::Resource('users', UserController::class);
 
         //Roles AND Permisions
-        Route::get('/roles', [UserRolesController::class, 'getAssignableRoles']);
+        Route::get('/roles', [UserRolesController::class, 'index']);
+        Route::get('/getAssignableRoles', [UserRolesController::class, 'getAssignableRoles']);
 
         Route::Resource('users-roles', UserRolesController::class);
         Route::Post('users-roles-addPermissionsToRole', [UserRolesController::class, 'addPermissionsToRole']);
@@ -47,6 +48,11 @@ Route::group(
 
         Route::Resource('users-permissions', UserPermissionsController::class);
         Route::get('users-permissions-permissionNotInCurrentRole/{id}', [UserPermissionsController::class, 'permissionNotInCurrentRole']);
+
+        // Sync permision to roles
+        Route::get('roles-with-modified-permissions', [UserRolesController::class, 'getRolesWithModifiedPermissions']);
+
+        Route::post('sync-permissions-to-role', [UserRolesController::class, 'syncPermissionsToRole']);
 
         //================================== Hospitals ===============================
         Route::apiResource('hospitals', HospitalController::class);

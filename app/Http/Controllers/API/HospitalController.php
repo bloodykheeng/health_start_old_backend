@@ -44,12 +44,16 @@ class HospitalController extends Controller
         $query->latest();
 
         // Pagination
-        $perPage = $request->query('per_page', 10); // Default to 10 per page
-        $page = $request->query('page', 1); // Default to first page
+        // $perPage = $request->query('per_page', 10); // Default to 10 per page
+        // $page = $request->query('page', 1); // Default to first page
 
-        $paginatedHospitals = $query->paginate($perPage);
+        // $paginatedHospitals = $query->paginate($perPage);
 
-        return response()->json($paginatedHospitals);
+        // return response()->json($paginatedHospitals);
+
+        $data = $query->get();
+
+        return response()->json($data);
     }
 
     public function show($id)

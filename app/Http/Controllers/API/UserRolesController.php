@@ -4,8 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class UserRolesController extends Controller
 {
@@ -20,7 +20,77 @@ class UserRolesController extends Controller
         return response()->json($userRoles, 200);
     }
 
+    /**
+     * Get roles with permissions.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getRolesWithModifiedPermissions()
+    {
+        $roles = Role::with('permissions')->get();
+        $permissions = Permission::all()->pluck('name')->toArray();
 
+        $result = $roles->map(function ($role) use ($permissions) {
+            $rolePermissions = $role->permissions->pluck('name')->toArray();
+
+            $formattedPermissions = collect($permissions)->map(function ($permission) use ($rolePermissions) {
+                return [
+                    'name' => $permission,
+                    'value' => in_array($permission, $rolePermissions),
+                ];
+            });
+
+            return [
+                'role' => $role->name,
+                'permissions' => $formattedPermissions,
+            ];
+        });
+
+        return response()->json($result, 200);
+    }
+
+    /**
+     * Sync permissions to a role.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+
+    public function syncPermissionsToRole(Request $request)
+    {
+
+        // $requestData = $request->all();
+
+        // return response()->json(['message' => 'Unauthorized', 'permoissionData' => $requestData['roles']], 403);
+
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'roles' => 'required|array',
+            'roles.*.role' => 'required|string|exists:roles,name',
+            'roles.*.permissions' => 'required|array',
+            'roles.*.permissions.*.name' => 'required|string|exists:permissions,name',
+            'roles.*.permissions.*.value' => 'required',
+        ]);
+        foreach ($validatedData['roles'] as $roleData) {
+            $role = Role::where('name', $roleData['role'])->firstOrFail();
+
+            // Convert string booleans to actual boolean values
+            $permissions = collect($roleData['permissions'])->map(function ($permission) {
+                $permission['value'] = filter_var($permission['value'], FILTER_VALIDATE_BOOLEAN);
+                return $permission;
+            });
+
+            // Filter and pluck permission names where value is true
+            $permissionNames = $permissions->filter(function ($permission) {
+                return $permission['value'] == true;
+            })->pluck('name')->toArray();
+
+            $permissions = Permission::whereIn('name', $permissionNames)->get();
+            $role->syncPermissions($permissions);
+        }
+
+        return response()->json(['message' => 'Permissions synced to roles successfully']);
+    }
 
     public function addPermissionsToRole(Request $request)
     {
@@ -39,7 +109,6 @@ class UserRolesController extends Controller
         return response()->json(['message' => 'Permissions added to role successfully']);
     }
 
-
     public function getAssignableRoles(Request $request)
     {
         if ($request->user()->hasRole('Admin')) {
@@ -49,7 +118,6 @@ class UserRolesController extends Controller
         }
         return response()->json($roles, 200);
     }
-
 
     public function deletePermissionFromRole(Request $request)
     {
