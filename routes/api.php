@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\HospitalController;
+use App\Http\Controllers\API\HospitalServiceController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserPermissionsController;
@@ -56,6 +57,7 @@ Route::group(
 
         //================================== Hospitals ===============================
         Route::apiResource('hospitals', HospitalController::class);
+        Route::resource('hospital-services', HospitalServiceController::class);
 
         //======================== services============================
         Route::apiResource('services', ServiceController::class);

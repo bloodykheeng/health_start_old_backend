@@ -55,15 +55,19 @@ class ServiceController extends Controller
 
     public function store(Request $request)
     {
+
+        // $requestData = $request->all();
+
+        // return response()->json(['message' => 'Unauthorized', 'permoissionData' => $requestData], 403);
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'required|string|max:255',
-            'photo_url' => 'nullable|string|max:255',
+            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $validated['created_by'] = Auth::id();
-        $validated['updated_by'] = Auth::id();
+       $validatedData['created_by'] = Auth::id();
+       $validatedData['updated_by'] = Auth::id();
 
         DB::beginTransaction();
 
@@ -71,9 +75,11 @@ class ServiceController extends Controller
 
             $photoUrl = null;
             if ($request->hasFile('photo')) {
+
                 $photoUrl = $this->uploadPhoto($request->file('photo'), 'service_photos'); // Save the photo in a specific folder
-                $validated['photo_url'] = $photoUrl;
+               $validatedData['photo_url'] = $photoUrl;
             }
+
 
             $service = Service::create($validatedData);
 

@@ -83,8 +83,8 @@ class HospitalController extends Controller
             'status' => 'required|string|max:255',
         ]);
 
-        $validated['created_by'] = Auth::id();
-        $validated['updated_by'] = Auth::id();
+        $validatedData['created_by'] = Auth::id();
+        $validatedData['updated_by'] = Auth::id();
 
         DB::beginTransaction();
 
@@ -93,7 +93,7 @@ class HospitalController extends Controller
             $photoUrl = null;
             if ($request->hasFile('photo')) {
                 $photoUrl = $this->uploadPhoto($request->file('photo'), 'hospital_photos'); // Save the photo in a specific folder
-                $validated['photo_url'] = $photoUrl;
+                $validatedData['photo_url'] = $photoUrl;
             }
 
             $hospital = Hospital::create($validatedData);
@@ -131,7 +131,7 @@ class HospitalController extends Controller
 
         try {
 
-            $validated['updated_by'] = Auth::id();
+            $validatedData['updated_by'] = Auth::id();
 
             $photoUrl = $hospital->photo_url;
             if ($request->hasFile('photo')) {
@@ -140,7 +140,7 @@ class HospitalController extends Controller
                     $this->deletePhoto($photoUrl);
                 }
                 $photoUrl = $this->uploadPhoto($request->file('photo'), 'spare_part_photos');
-                $validated['photo_url'] = $photoUrl;
+                $validatedData['photo_url'] = $photoUrl;
             }
             $hospital->update($validatedData);
 
