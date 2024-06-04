@@ -68,6 +68,6 @@ Route::group(
         Route::apiResource('user-points', UserPointController::class);
 
         //================== visits ========================================
-        Route::get('visits', VisitController::class);
+        Route::apiResource('visits', VisitController::class);
     }
 );

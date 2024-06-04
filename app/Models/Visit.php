@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Visit extends Model
 {
@@ -11,7 +12,9 @@ class Visit extends Model
 
     protected $fillable = [
         'user_id',
+        'identifier',
         'hospital_id',
+        'no_of_points',
         'start_date',
         'end_date',
         'purpose',
@@ -54,4 +57,34 @@ class Visit extends Model
     {
         return $this->hasMany(VisitService::class);
     }
+
+    protected static function booted()
+    {
+        static::creating(function ($item) {
+            $item->identifier = static::generateUniqueIdentifier();
+        });
+    }
+
+    public static function generateUniqueIdentifier()
+    {
+        $baseIdentifier = Str::random(8) . '-' . now()->timestamp;
+
+        if (static::where('identifier', $baseIdentifier)->doesntExist()) {
+            return $baseIdentifier;
+        }
+
+        $counter = 1;
+        // Limiting the counter to prevent infinite loops
+        while ($counter < 1000) {
+            $identifier = "{$baseIdentifier}-{$counter}";
+            if (static::where('identifier', $identifier)->doesntExist()) {
+                return $identifier;
+            }
+            $counter++;
+        }
+
+        // Fallback if reached 1000 iterations (should ideally never happen)
+        return "{$baseIdentifier}-" . uniqid();
+    }
+
 }

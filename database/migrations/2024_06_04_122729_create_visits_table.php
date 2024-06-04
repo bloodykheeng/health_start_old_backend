@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('visits', function (Blueprint $table) {
             $table->id();
+            $table->text('identifier')->index()->nullable();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('hospital_id');
             $table->datetime('start_date')->index();
+            $table->decimal('no_of_points', 15, 2)->default(0);
             $table->datetime('end_date')->index()->nullable();
             $table->string('purpose')->nullable();
             $table->string('doctor_name')->nullable();

@@ -28,8 +28,8 @@ class ServiceController extends Controller
             // Find the hospital and eagerly load its services
             $hospital = Hospital::with('services')->find($hospitalId);
             if ($hospital) {
-                // Get the service_ids of services attached to the hospital
-                $serviceIds = $hospital->services->pluck('service_id')->toArray();
+                // Get the ids of services attached to the hospital
+                $serviceIds = $hospital->services->pluck('id')->toArray();
                 // Filter the query by these service IDs
                 $query->whereIn('id', $serviceIds);
             } else {

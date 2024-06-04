@@ -14,7 +14,7 @@ class UserPoint extends Model
         'user_id',
         'identifier',
         'hospital_id',
-        'amount',
+        'no_of_points',
         'price',
         'payment_method',
         'details',

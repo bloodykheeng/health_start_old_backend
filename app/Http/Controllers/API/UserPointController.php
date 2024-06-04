@@ -76,7 +76,7 @@ class UserPointController extends Controller
         $validatedData = $request->validate([
             'user_id' => 'required|exists:users,id',
             'hospital_id' => 'nullable|exists:hospitals,id',
-            'amount' => 'required|numeric',
+            'no_of_points' => 'required|numeric',
             'price' => 'required|numeric',
             'payment_method' => 'required|string',
             'details' => 'nullable|string',
@@ -103,7 +103,7 @@ class UserPointController extends Controller
         $validatedData = $request->validate([
             'user_id' => 'required|exists:users,id',
             'hospital_id' => 'nullable|exists:hospitals,id',
-            'amount' => 'required|numeric',
+            'no_of_points' => 'required|numeric',
             'price' => 'required|numeric',
             'payment_method' => 'required|string',
             'details' => 'nullable|string',

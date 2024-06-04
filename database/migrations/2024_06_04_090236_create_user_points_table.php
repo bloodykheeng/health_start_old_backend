@@ -16,8 +16,8 @@ return new class extends Migration
             $table->text('identifier')->index()->nullable();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('hospital_id');
-            $table->decimal('amount', 15, 2);
-            $table->decimal('price', 15, 2);
+            $table->decimal('no_of_points', 15, 2)->default(0);
+            $table->decimal('price', 15, 2)->default(0);
             $table->string('payment_method')->index();
             $table->text('details')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();

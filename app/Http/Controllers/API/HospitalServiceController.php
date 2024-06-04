@@ -87,6 +87,7 @@ class HospitalServiceController extends Controller
         $validated = $request->validate([
             'hospital_id' => 'required|integer|exists:hospitals,id',
             'service_id' => 'required|integer|exists:services,id',
+            'no_of_points' => 'required|numeric',
         ]);
 
         DB::beginTransaction();
@@ -103,6 +104,7 @@ class HospitalServiceController extends Controller
             $hospitalService->update([
                 'hospital_id' => $validated['hospital_id'],
                 'service_id' => $validated['service_id'],
+                'no_of_points' => $validated['no_of_points'],
                 'updated_by' => auth()->id(),
             ]);
 
@@ -111,7 +113,7 @@ class HospitalServiceController extends Controller
             return response()->json(['message' => 'Hospital Service updated successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'An error occurred while updating Hospital Service.'], 500);
+            return response()->json(['message' => 'An error occurred while updating Hospital Service.', 'error' => $e->getMessage()], 500);
         }
     }public function destroy($id)
     {

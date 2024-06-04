@@ -23,6 +23,20 @@ class Hospital extends Model
     {
         return $this->hasMany(Visit::class);
     }
+
+    public function hospitalServices()
+    {
+        return $this->hasMany(HospitalService::class);
+    }
+
+    public function services()
+    {
+        // 'hospital_services': The name of the pivot table that links hospitals and services.
+        // 'hospital_id': The foreign key in the pivot table referencing the visits table.
+        // 'service_id': The foreign key in the pivot table referencing the services table.
+        return $this->belongsToMany(Service::class, 'hospital_services', 'hospital_id', 'service_id');
+    }
+
     /**
      * Get the user who created the cart.
      */

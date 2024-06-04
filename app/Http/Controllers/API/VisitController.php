@@ -35,7 +35,7 @@ class VisitController extends Controller
         // Execute the query and get the results
         $visits = $query->get();
 
-        return response()->json($visits);
+        return response()->json(['data' => $visits]);
     }
 
     public function show($id)
@@ -55,12 +55,13 @@ class VisitController extends Controller
             'hospital_id' => 'required|exists:hospitals,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'no_of_points' => 'required|numeric',
             'purpose' => 'nullable|string',
             'doctor_name' => 'nullable|string',
             'details' => 'nullable|string',
             'status' => 'nullable|string',
             'services' => 'nullable|array',
-            'services.*.service_id' => 'required_with:services|exists:services,id',
+            'services.*.id' => 'required_with:services|exists:services,id',
         ]);
 
         $validated['created_by'] = Auth::id();
@@ -72,7 +73,7 @@ class VisitController extends Controller
             foreach ($validated['services'] as $service) {
                 VisitService::create([
                     'visit_id' => $visit->id,
-                    'service_id' => $service['service_id'],
+                    'service_id' => $service['id'],
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);
@@ -92,6 +93,7 @@ class VisitController extends Controller
         $validated = $request->validate([
             'user_id' => 'sometimes|exists:users,id',
             'hospital_id' => 'sometimes|exists:hospitals,id',
+            'no_of_points' => 'required|numeric',
             'start_date' => 'sometimes|date',
             'end_date' => 'sometimes|date|after_or_equal:start_date',
             'purpose' => 'nullable|string',
@@ -99,7 +101,7 @@ class VisitController extends Controller
             'details' => 'nullable|string',
             'status' => 'nullable|string',
             'services' => 'nullable|array',
-            'services.*.service_id' => 'required_with:services|exists:services,id',
+            'services.*.id' => 'required_with:services|exists:services,id',
         ]);
 
         $validated['updated_by'] = Auth::id();
@@ -114,7 +116,7 @@ class VisitController extends Controller
             foreach ($validated['services'] as $service) {
                 VisitService::create([
                     'visit_id' => $visit->id,
-                    'service_id' => $service['service_id'],
+                    'service_id' => $service['id'],
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);

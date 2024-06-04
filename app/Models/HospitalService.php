@@ -12,6 +12,7 @@ class HospitalService extends Model
     protected $fillable = [
         'hospital_id',
         'service_id',
+        'no_of_points',
         'created_by',
         'updated_by',
     ];
