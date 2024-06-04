@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Hospital;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,22 @@ class ServiceController extends Controller
         $search = $request->query('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%");
+        }
+
+        // Apply filter by hospital_id
+        $hospitalId = $request->query('hospital_id');
+        if ($hospitalId) {
+            // Find the hospital and eagerly load its services
+            $hospital = Hospital::with('services')->find($hospitalId);
+            if ($hospital) {
+                // Get the service_ids of services attached to the hospital
+                $serviceIds = $hospital->services->pluck('service_id')->toArray();
+                // Filter the query by these service IDs
+                $query->whereIn('id', $serviceIds);
+            } else {
+                // If no hospital found, return an empty result
+                return response()->json(['message' => 'Hospital not found'], 401);
+            }
         }
 
         // Apply orderBy and orderDirection if both are provided
@@ -66,8 +83,8 @@ class ServiceController extends Controller
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-       $validatedData['created_by'] = Auth::id();
-       $validatedData['updated_by'] = Auth::id();
+        $validatedData['created_by'] = Auth::id();
+        $validatedData['updated_by'] = Auth::id();
 
         DB::beginTransaction();
 
@@ -77,9 +94,8 @@ class ServiceController extends Controller
             if ($request->hasFile('photo')) {
 
                 $photoUrl = $this->uploadPhoto($request->file('photo'), 'service_photos'); // Save the photo in a specific folder
-               $validatedData['photo_url'] = $photoUrl;
+                $validatedData['photo_url'] = $photoUrl;
             }
-
 
             $service = Service::create($validatedData);
 

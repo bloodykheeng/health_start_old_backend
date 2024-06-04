@@ -7,6 +7,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserPermissionsController;
 use App\Http\Controllers\API\UserPointController;
 use App\Http\Controllers\API\UserRolesController;
+use App\Http\Controllers\API\VisitController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\Route;
@@ -65,5 +66,8 @@ Route::group(
 
         //=================== user points ====================================
         Route::apiResource('user-points', UserPointController::class);
+
+        //================== visits ========================================
+        Route::get('visits', VisitController::class);
     }
 );

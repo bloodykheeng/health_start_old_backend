@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Service extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'status', 'description', 'photo_url', 'created_by', 'updated_by'
+        'name', 'slug', 'status', 'description', 'photo_url', 'created_by', 'updated_by',
     ];
+
+    public function visitServices()
+    {
+        return $this->hasMany(VisitService::class);
+    }
 
     public function createdBy()
     {

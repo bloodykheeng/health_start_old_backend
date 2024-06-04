@@ -19,6 +19,10 @@ class Hospital extends Model
         'name', 'address', 'photo_url', 'city', 'state', 'country', 'zip_code', 'phone_number', 'email', 'website', 'capacity', 'status', 'created_by', 'updated_by',
     ];
 
+    public function visits()
+    {
+        return $this->hasMany(Visit::class);
+    }
     /**
      * Get the user who created the cart.
      */

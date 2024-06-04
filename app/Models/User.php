@@ -54,6 +54,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function visits()
+    {
+        return $this->hasMany(Visit::class);
+    }
+
     // Relationship with HospitalUser
     public function hospitals()
     {
