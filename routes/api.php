@@ -5,6 +5,7 @@ use App\Http\Controllers\API\HospitalServiceController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserPermissionsController;
+use App\Http\Controllers\API\UserPointController;
 use App\Http\Controllers\API\UserRolesController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
@@ -61,5 +62,8 @@ Route::group(
 
         //======================== services============================
         Route::apiResource('services', ServiceController::class);
+
+        //=================== user points ====================================
+        Route::apiResource('user-points', UserPointController::class);
     }
 );
