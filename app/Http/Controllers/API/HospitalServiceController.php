@@ -24,7 +24,7 @@ class HospitalServiceController extends Controller
 
         $hospitalServices = $query->get();
 
-        return response()->json($hospitalServices, 200);
+        return response()->json(['data' => $hospitalServices], 200);
     }
     public function show($id)
     {

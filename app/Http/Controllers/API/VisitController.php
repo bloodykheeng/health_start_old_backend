@@ -7,13 +7,14 @@ use App\Models\Visit;
 use App\Models\VisitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class VisitController extends Controller
 {
     public function index(Request $request)
     {
         // Start building the query
-        $query = Visit::with(['user', 'hospital', 'createdBy', 'updatedBy', 'services', 'visitServices.service']);
+        $query = Visit::with(['user', 'hospital', 'createdBy', 'updatedBy', 'visitServices.hospitalService.service', 'hospitalServices.service']);
 
         // Get the currently authenticated user
         /** @var \App\Models\User */
@@ -41,7 +42,7 @@ class VisitController extends Controller
     public function show($id)
     {
         // Include related models in the with() method to fetch their data
-        $visit = Visit::with(['user', 'hospital', 'createdBy', 'updatedBy', 'visitServices.service'])->find($id);
+        $visit = Visit::with(['user', 'hospital', 'createdBy', 'updatedBy', 'visitServices.hospitalService.service'])->find($id);
         if (!$visit) {
             return response()->json(['message' => 'Visit not found'], 404);
         }
@@ -60,27 +61,47 @@ class VisitController extends Controller
             'doctor_name' => 'nullable|string',
             'details' => 'nullable|string',
             'status' => 'nullable|string',
-            'services' => 'nullable|array',
-            'services.*.id' => 'required_with:services|exists:services,id',
+            'visit_services' => 'nullable|array',
+            'visit_services.*.id' => 'required_with:visit_services|exists:hospital_services,id',
         ]);
 
-        $validated['created_by'] = Auth::id();
-        $validated['updated_by'] = Auth::id();
+        try {
+            // Start a database transaction
+            DB::beginTransaction();
 
-        $visit = Visit::create($validated);
+            $validated['created_by'] = Auth::id();
+            $validated['updated_by'] = Auth::id();
 
-        if (isset($validated['services'])) {
-            foreach ($validated['services'] as $service) {
-                VisitService::create([
-                    'visit_id' => $visit->id,
-                    'service_id' => $service['id'],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
+            // Create the Visit
+            $visit = Visit::create($validated);
+
+            if (isset($validated['visit_services'])) {
+                foreach ($validated['visit_services'] as $service) {
+                    // Create each VisitService record
+                    VisitService::create([
+                        'visit_id' => $visit->id,
+                        'hospital_services_id' => $service['id'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
             }
-        }
 
-        return response()->json(['message' => 'Visit created successfully', 'data' => $visit->load('visitServices.service')], 201);
+            // Commit the transaction if all operations succeed
+            DB::commit();
+
+            // Load hospitalService relationship with visitServices
+            $visit->load('visitServices.hospitalService');
+
+            return response()->json(['message' => 'Visit created successfully', 'data' => $visit], 201);
+
+        } catch (\Exception $e) {
+            // Rollback the transaction if an exception occurs
+            DB::rollback();
+
+            // Handle the exception, log it, or return an appropriate error response
+            return response()->json(['message' => 'Failed to create visit', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function update(Request $request, $id)
@@ -100,30 +121,48 @@ class VisitController extends Controller
             'doctor_name' => 'nullable|string',
             'details' => 'nullable|string',
             'status' => 'nullable|string',
-            'services' => 'nullable|array',
-            'services.*.id' => 'required_with:services|exists:services,id',
+            'visit_services' => 'nullable|array',
+            'visit_services.*.id' => 'required_with:visit_services|exists:hospital_services,id',
         ]);
 
-        $validated['updated_by'] = Auth::id();
+        try {
+            // Start a database transaction
+            DB::beginTransaction();
 
-        $visit->update($validated);
+            $validated['updated_by'] = Auth::id();
 
-        if (isset($validated['services'])) {
-            // Delete existing services for the visit
+            $visit->update($validated);
+
+            // Delete existing visit services
             VisitService::where('visit_id', $visit->id)->delete();
 
-            // Add new services
-            foreach ($validated['services'] as $service) {
-                VisitService::create([
-                    'visit_id' => $visit->id,
-                    'service_id' => $service['id'],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
+            // Add updated visit services
+            if (isset($validated['visit_services'])) {
+                foreach ($validated['visit_services'] as $service) {
+                    VisitService::create([
+                        'visit_id' => $visit->id,
+                        'hospital_services_id' => $service['id'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
             }
-        }
 
-        return response()->json(['message' => 'Visit updated successfully', 'data' => $visit->load('visitServices.service')]);
+            // Commit the transaction if all operations succeed
+            DB::commit();
+
+            // Reload the visit with updated visit services and their associated service information
+            $visit->load('visitServices.hospitalService');
+
+            return response()->json(['message' => 'Visit updated successfully', 'data' => $visit]);
+
+        } catch (\Exception $e) {
+            // Rollback the transaction if an exception occurs
+            DB::rollback();
+
+            // Handle the exception, log it, or return an appropriate error response
+            return response()->json(['message' => 'Failed to update visit', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy($id)

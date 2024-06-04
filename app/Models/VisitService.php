@@ -11,7 +11,7 @@ class VisitService extends Model
 
     protected $fillable = [
         'visit_id',
-        'service_id',
+        'hospital_services_id',
         'created_by',
         'updated_by',
     ];
@@ -21,9 +21,9 @@ class VisitService extends Model
         return $this->belongsTo(Visit::class);
     }
 
-    public function service()
+    public function hospitalService()
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(HospitalService::class, 'hospital_services_id');
     }
 
     public function createdBy()

@@ -58,6 +58,19 @@ class Visit extends Model
         return $this->hasMany(VisitService::class);
     }
 
+    // Define a relationship to directly load hospitalService
+    public function hospitalServices()
+    {
+
+        // 'HospitalService': The target model class representing hospital services.
+        // 'VisitService': The intermediate model class connecting visits and hospital services.
+        // 'visit_id': The foreign key on the intermediate model referencing the visits table.
+        // 'id': The local key on the visits table.
+        // 'id': The foreign key on the intermediate model referencing the hospital services table.
+        // 'hospital_services_id': The local key on the hospital services table.
+        return $this->hasManyThrough(HospitalService::class, VisitService::class, 'visit_id', 'id', 'id', 'hospital_services_id');
+    }
+
     protected static function booted()
     {
         static::creating(function ($item) {
