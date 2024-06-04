@@ -54,10 +54,11 @@ class User extends Authenticatable
         ];
     }
 
-    // public function vendors()
-    // {
-    //     return $this->hasOne(UserVendor::class, 'user_id');
-    // }
+    // Relationship with HospitalUser
+    public function hospitals()
+    {
+        return $this->hasMany(HospitalUser::class, 'user_id');
+    }
 
     protected static function booted()
     {

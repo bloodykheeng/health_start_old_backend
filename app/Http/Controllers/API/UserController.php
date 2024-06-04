@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\HospitalUser;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,13 +20,13 @@ class UserController extends Controller
         //     return response()->json(['message' => 'Unauthorized'], 403);
         // }
 
-        $query = User::query();
+        $query = User::with(['hospitals.hospital']);
 
-        // Check if vendor_id is provided and not null
-        if ($request->has('vendor_id') && $request->vendor_id !== null) {
-            // Filter users by the provided vendor_id
-            $query->whereHas('vendors', function ($query) use ($request) {
-                $query->where('vendor_id', $request->vendor_id);
+        // Check if hospital_id is provided and not null
+        if ($request->has('hospital_id') && $request->hospital_id !== null) {
+            // Filter users by the provided hospital_id
+            $query->whereHas('hospitals', function ($query) use ($request) {
+                $query->where('hospital_id', $request->hospital_id);
             });
         }
 
@@ -82,7 +83,7 @@ class UserController extends Controller
         // }
 
         // $user = User::with(["vendors.vendor"])->findOrFail($id);
-        $user = User::findOrFail($id);
+        $user = User::with(['hospitals.hospital'])->findOrFail($id);
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
@@ -112,6 +113,7 @@ class UserController extends Controller
             'role' => 'required|exists:roles,name',
             // 'vendor_id' => 'nullable|exists:vendors,id', // validate vendor_id
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048', // Expect a file for the photo
+            'health_facilities' => 'nullable|array', // Ensure hospitals is an array
         ]);
 
         $photoUrl = null;
@@ -137,6 +139,23 @@ class UserController extends Controller
 
             // Sync the user's role
             $user->syncRoles([$validatedData['role']]);
+
+            // Attach hospitals if provided
+            if (isset($validatedData['health_facilities'])) {
+                foreach ($validatedData['health_facilities'] as $hospitalData) {
+
+                    $hospitalUser = HospitalUser::firstOrNew([
+                        'user_id' => $user->id,
+                        'hospital_id' => $hospitalData['id'],
+                    ]);
+
+                    if (!$hospitalUser->exists) {
+                        $hospitalUser->save();
+                    } else {
+                        throw new \Exception("User is already associated with hospital '{$hospitalData['name']}'");
+                    }
+                }
+            }
 
             // Optionally get permissions associated with the user's role
             // $permissions = Permission::whereIn('id', $user->roles->first()->permissions->pluck('id'))->pluck('name');
@@ -185,6 +204,7 @@ class UserController extends Controller
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048', // Validation for photo
             'role' => 'sometimes|exists:roles,name',
             // 'vendor_id' => 'nullable|exists:vendors,id',
+            'health_facilities' => 'nullable|array', // Ensure hospitals is an array
         ]);
 
         $user = User::find($id);
@@ -222,15 +242,26 @@ class UserController extends Controller
                 $user->syncRoles([$validatedData['role']]);
             }
 
-            if (isset($validatedData['vendor_id'])) {
-                $user->vendors()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    ['vendor_id' => $validatedData['vendor_id']]
-                );
+            // Update or attach hospitals if provided
+            if (isset($validatedData['health_facilities'])) {
+                $newHospitalIds = collect($validatedData['health_facilities'])->pluck('id')->toArray();
+
+                // Remove existing hospitals not in the new list
+                $user->hospitals()->whereNotIn('hospital_id', $newHospitalIds)->delete();
+
+                foreach ($validatedData['health_facilities'] as $hospitalData) {
+                    $hospitalUser = HospitalUser::firstOrNew([
+                        'user_id' => $user->id,
+                        'hospital_id' => $hospitalData['id'],
+                    ]);
+
+                    if (!$hospitalUser->exists) {
+                        $hospitalUser->save();
+                    } else {
+                        throw new \Exception("User is already associated with hospital '{$hospitalData['name']}'");
+                    }
+                }
             }
-            // else {
-            //     $user->vendors()->delete();
-            // }
 
             DB::commit();
             return response()->json(['message' => 'User updated successfully!', 'user' => $user], 200);

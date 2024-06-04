@@ -11,7 +11,7 @@ class HospitalUser extends Model
 
     protected $fillable = [
         'user_id',
-        'vendor_id',
+        'hospital_id',
         'created_by',
         'updated_by',
     ];
@@ -19,12 +19,12 @@ class HospitalUser extends Model
     // Relationships
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function hospital()
     {
-        return $this->belongsTo(Hospital::class);
+        return $this->belongsTo(Hospital::class, 'hospital_id');
     }
 
     /**

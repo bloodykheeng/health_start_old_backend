@@ -53,7 +53,7 @@ class HospitalController extends Controller
 
         $data = $query->get();
 
-        return response()->json($data);
+        return response()->json(["data" => $data]);
     }
 
     public function show($id)
