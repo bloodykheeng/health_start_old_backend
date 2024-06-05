@@ -29,7 +29,7 @@ class HospitalController extends Controller
 
         // Filter hospitals by logged in ID if provided in the request
         $byLoggedInUser = $request->query('get_by_logged_in_user');
-        if (isset($byLoggedInUser)) {
+        if (isset($byLoggedInUser) && $byLoggedInUser == 'true') {
             $authUseId = Auth::id();
             $query->whereHas('hospitalUsers', function ($subQuery) use ($authUseId) {
                 $subQuery->where('user_id', $authUseId);
