@@ -19,6 +19,12 @@ class Hospital extends Model
         'name', 'address', 'points_percentage_value', 'photo_url', 'city', 'state', 'country', 'zip_code', 'phone_number', 'email', 'website', 'capacity', 'status', 'created_by', 'updated_by',
     ];
 
+    // Relationship with HospitalUser pivot table
+    public function hospitalUsers()
+    {
+        return $this->hasMany(HospitalUser::class);
+    }
+
     public function visits()
     {
         return $this->hasMany(Visit::class);

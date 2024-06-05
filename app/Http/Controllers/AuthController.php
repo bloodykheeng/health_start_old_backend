@@ -101,6 +101,12 @@ class AuthController extends Controller
             'agree' => $user->agree,
         ];
 
+        // Load hospitals if the user is a Health Facility Manager or Patient
+        if ($user->hasAnyRole(['Health Facility Manager', 'Patient'])) {
+            // $hospitals = $user->hospitals()->with('hospital')->get()->pluck('hospital');
+            $hospitals = $user->hospitals()->get();
+            $response['hospitals'] = $hospitals;
+        }
         // Check if the user is a Vendor and include vendor details
         // if ($user->hasRole('Vendor')) {
         //     $vendor = $user->vendors()->first(); // Assuming there's a vendors() relationship

@@ -27,6 +27,22 @@ class HospitalController extends Controller
             });
         }
 
+        // Filter hospitals by logged in ID if provided in the request
+        $byLoggedInUser = $request->query('get_by_logged_in_user');
+        if (isset($byLoggedInUser)) {
+            $authUseId = Auth::id();
+            $query->whereHas('hospitalUsers', function ($subQuery) use ($authUseId) {
+                $subQuery->where('user_id', $authUseId);
+            });
+        }
+        // Filter hospitals by user ID if provided in the request
+        $userId = $request->query('user_id');
+        if ($userId) {
+            $query->whereHas('hospitalUsers', function ($subQuery) use ($userId) {
+                $subQuery->where('user_id', $userId);
+            });
+        }
+
         // Apply orderBy and orderDirection if both are provided
         // $orderBy = $request->query('orderBy');
         // $orderDirection = $request->query('orderDirection', 'asc');
