@@ -16,7 +16,7 @@ class Hospital extends Model
      * @var array
      */
     protected $fillable = [
-        'name', 'address', 'photo_url', 'city', 'state', 'country', 'zip_code', 'phone_number', 'email', 'website', 'capacity', 'status', 'created_by', 'updated_by',
+        'name', 'address', 'points_percentage_value', 'photo_url', 'city', 'state', 'country', 'zip_code', 'phone_number', 'email', 'website', 'capacity', 'status', 'created_by', 'updated_by',
     ];
 
     public function visits()

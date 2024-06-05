@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('photo_url')->nullable();
+            $table->decimal('points_percentage_value', 15, 2)->default(1);
             $table->string('country')->nullable();
             $table->string('zip_code')->nullable();
             $table->string('phone_number')->nullable();

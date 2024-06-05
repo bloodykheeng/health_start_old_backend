@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ThirdPartyAuthProvider;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\ThirdPartyAuthProvider;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 /**
  * @OA\Tag(
@@ -115,17 +115,47 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        // if (!Auth::attempt($request->only('email', 'password'))) {
+        //     return response()->json(['message' => 'Invalid Email Or Password'], 401);
+        // }
+
+        // $user = User::where('email', $request['email'])->firstOrFail();
+
+        // // Check if the user's status is active
+        // if ($user->status !== 'active') {
+        //     return response()->json(['message' => 'Account is not active'], 403);
+        // }
+
+        $credentials = $request->only('email', 'password');
+
+        /** @var \App\Models\User $user **/
+        $user = null;
+
+        // Attempt to log in using email and password
+
+        if (Auth::attempt($credentials)) {
+            // Retrieve the authenticated user
+            $user = Auth::user();
+        } elseif (filter_var($request->email, FILTER_VALIDATE_EMAIL) === false) {
+            // Attempt to log in using phone and password if email validation fails
+            if (!Auth::attempt(['phone' => $request->email, 'password' => $request->password])) {
+                // If authentication fails for both email and phone, return error response
+                return response()->json(['message' => 'Invalid Email Or Password'], 401);
+            }
+            // Retrieve the authenticated user
+            $user = Auth::user();
+        } else {
+            // If authentication fails for email and no phone provided, return error response
             return response()->json(['message' => 'Invalid Email Or Password'], 401);
         }
 
-        $user = User::where('email', $request['email'])->firstOrFail();
-
         // Check if the user's status is active
         if ($user->status !== 'active') {
+            Auth::logout(); // Logout the user before returning error
             return response()->json(['message' => 'Account is not active'], 403);
         }
 
+        /** @var \App\Models\User $user **/
         $token = $user->createToken('auth_token')->plainTextToken;
 
         $response = [
@@ -154,9 +184,15 @@ class AuthController extends Controller
             ];
         }
 
+        // Load hospitals if the user is a Health Facility Manager or Patient
+        if ($user->hasAnyRole(['Health Facility Manager', 'Patient'])) {
+            // $hospitals = $user->hospitals()->with('hospital')->get()->pluck('hospital');
+            $hospitals = $user->hospitals()->get();
+            $response['hospitals'] = $hospitals;
+        }
+
         return response()->json($response);
     }
-
 
     public function thirdPartyLoginAuthentication(Request $request)
     {
@@ -401,7 +437,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
-
 
     // method for user logout and delete token
     public function logout()

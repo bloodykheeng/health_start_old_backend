@@ -27,18 +27,80 @@ class RolesAndPermissionsSeeder extends Seeder
                 'add permissions on roles',
                 'delete permissions on roles',
                 'view permissions',
+
+                // services
+                'view services',
+                'create services',
+                'edit services',
+                'delete services',
+
+                // hospital
+                'view hospitals',
+                'create hospitals',
+                'edit hospitals',
+                'delete hospitals',
+
+                // hospital services
+                'view hospital services',
+                'create hospital services',
+                'edit hospital services',
+                'delete hospital services',
+
+                //hospital users
+                'view hospital users',
+                'create hospital users',
+                'edit hospital users',
+                'delete hospital users',
+
+                //user points
+                'view user points',
+                'create user points',
+                'edit user points',
+                'delete user points',
+
+                // user visits
+                'view user visits',
+                'create user visits',
+                'edit user visits',
+                'delete user visits',
             ],
             'Health Facility Manager' => [
-                'view',
-                'create',
-                'update',
-                'delete',
+                // hospital
+                'view hospitals',
+                'create hospitals',
+                'edit hospitals',
+                'delete hospitals',
+
+                // hospital services
+                'view hospital services',
+                'create hospital services',
+                'edit hospital services',
+                'delete hospital services',
+
+                //hospital users
+                'view hospital users',
+                'create hospital users',
+                'edit hospital users',
+                'delete hospital users',
+
+                //user points
+                'view user points',
+                'create user points',
+                'edit user points',
+                'delete user points',
+
+                // user visits
+                'view user visits',
+                'create user visits',
+                'edit user visits',
+                'delete user visits',
             ],
             'Patient' => [
                 'view',
                 'create',
                 'update',
                 'delete',
+
             ],
 
         ];

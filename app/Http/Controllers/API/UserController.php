@@ -20,7 +20,7 @@ class UserController extends Controller
         //     return response()->json(['message' => 'Unauthorized'], 403);
         // }
 
-        $query = User::with(['hospitals.hospital']);
+        $query = User::with(['hospitals', 'hospitalUsers.hospital']);
 
         // Check if hospital_id is provided and not null
         if ($request->has('hospital_id') && $request->hospital_id !== null) {
@@ -83,7 +83,7 @@ class UserController extends Controller
         // }
 
         // $user = User::with(["vendors.vendor"])->findOrFail($id);
-        $user = User::with(['hospitals.hospital'])->findOrFail($id);
+        $user = User::with(['hospitals', 'hospitalUsers.hospital'])->findOrFail($id);
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
@@ -104,8 +104,8 @@ class UserController extends Controller
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'nullable|string|max:255|unique:users',
+            'email' => 'nullable|string|email|max:255|unique:users',
             'status' => 'required|string|max:255',
             'dateOfBirth' => 'required|date',
             'lastlogin' => 'nullable|date',
@@ -115,6 +115,12 @@ class UserController extends Controller
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048', // Expect a file for the photo
             'health_facilities' => 'nullable|array', // Ensure hospitals is an array
         ]);
+
+        if (empty($request->phone) && empty($request->email)) {
+            return response()->json([
+                'message' => 'Either phone or email is required.',
+            ], 400); // 400 Bad Request
+        }
 
         $photoUrl = null;
         if ($request->hasFile('photo')) {
@@ -204,8 +210,17 @@ class UserController extends Controller
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048', // Validation for photo
             'role' => 'sometimes|exists:roles,name',
             // 'vendor_id' => 'nullable|exists:vendors,id',
-            'health_facilities' => 'nullable|array', // Ensure hospitals is an array
+            // 'health_facilities' => 'nullable|array', // Ensure hospitals is an array
         ]);
+
+        $healthFacilities = json_decode($request->input('health_facilities'), true);
+
+        // return response()->json(['message' => 'testing', 'data' => $healthFacilities], 400);
+
+        // Ensure healthFacilities is an array
+        if (isset($healthFacilities) && !is_array($healthFacilities)) {
+            return response()->json(['message' => 'health_facilities must be an array'], 400);
+        }
 
         $user = User::find($id);
         if (!$user) {
@@ -243,13 +258,13 @@ class UserController extends Controller
             }
 
             // Update or attach hospitals if provided
-            if (isset($validatedData['health_facilities'])) {
-                $newHospitalIds = collect($validatedData['health_facilities'])->pluck('id')->toArray();
+            if (isset($healthFacilities)) {
+                $newHospitalIds = collect($healthFacilities)->pluck('id')->toArray();
 
                 // Remove existing hospitals not in the new list
-                $user->hospitals()->whereNotIn('hospital_id', $newHospitalIds)->delete();
+                $user->hospitalUsers()->whereNotIn('hospital_id', $newHospitalIds)->delete();
 
-                foreach ($validatedData['health_facilities'] as $hospitalData) {
+                foreach ($healthFacilities as $hospitalData) {
                     $hospitalUser = HospitalUser::firstOrNew([
                         'user_id' => $user->id,
                         'hospital_id' => $hospitalData['id'],
@@ -257,9 +272,10 @@ class UserController extends Controller
 
                     if (!$hospitalUser->exists) {
                         $hospitalUser->save();
-                    } else {
-                        throw new \Exception("User is already associated with hospital '{$hospitalData['name']}'");
                     }
+                    // else {
+                    //     throw new \Exception("User is already associated with hospital '{$hospitalData['name']}'");
+                    // }
                 }
             }
 

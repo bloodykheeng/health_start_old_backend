@@ -12,7 +12,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -59,8 +59,16 @@ class User extends Authenticatable
         return $this->hasMany(Visit::class);
     }
 
-    // Relationship with HospitalUser
     public function hospitals()
+    {
+        // 'hospital_users': The name of the pivot table that links users and hospitals.
+        // 'user_id': The foreign key in the pivot table referencing the users table.
+        // 'hospital_id': The foreign key in the pivot table referencing the hospitals table.
+        return $this->belongsToMany(Hospital::class, 'hospital_users', 'user_id', 'hospital_id');
+    }
+
+    // Relationship with HospitalUser
+    public function hospitalUsers()
     {
         return $this->hasMany(HospitalUser::class, 'user_id');
     }
@@ -93,12 +101,22 @@ class User extends Authenticatable
         return "{$baseSlug}-" . uniqid();
     }
 
+    // mutator function that ensures only nulls are sent to unique field incase value is empty string
     public function setEmailAttribute($value)
     {
         if (empty($value)) { // will check for empty string
             $this->attributes['email'] = null;
         } else {
             $this->attributes['email'] = $value;
+        }
+    }
+
+    public function setPhoneAttribute($value)
+    {
+        if (empty($value)) { // will check for empty string
+            $this->attributes['phone'] = null;
+        } else {
+            $this->attributes['phone'] = $value;
         }
     }
 
