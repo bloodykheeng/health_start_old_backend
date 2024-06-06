@@ -203,7 +203,7 @@ class UserController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'phone' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255|unique:users,phone,' . $id,
             'status' => 'required|string|max:255',
             'dateOfBirth' => 'required|date',
             'lastlogin' => 'nullable|date',
