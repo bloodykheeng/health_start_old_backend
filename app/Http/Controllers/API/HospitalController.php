@@ -27,6 +27,7 @@ class HospitalController extends Controller
             });
         }
 
+        // hello
         // Filter hospitals by logged in ID if provided in the request
         $byLoggedInUser = $request->query('get_by_logged_in_user');
         if (isset($byLoggedInUser) && $byLoggedInUser == 'true') {
